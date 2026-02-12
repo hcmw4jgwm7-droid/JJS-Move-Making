@@ -1,0 +1,23 @@
+-- Place inside ReplicatedStorage and name it "MoveData"
+local MoveData = {
+    ["MooseSmash"] = {
+        ["Slot"] = 1,
+        ["Damage"] = 25,
+        ["Cooldown"] = 3,
+        ["WindupTime"] = 0.3, -- Time before hit happens
+        ["AnimationId"] = "rbxassetid://YOUR_ANIMATION_ID_HERE", -- Replace with your ID
+        ["VFXColor"] = Color3.fromRGB(139, 69, 19), -- Brown for Moose
+        ["HitboxSize"] = Vector3.new(6, 6, 6)
+    },
+    ["AntlerRush"] = {
+        ["Slot"] = 2,
+        ["Damage"] = 15,
+        ["Cooldown"] = 5,
+        ["WindupTime"] = 0,
+        ["AnimationId"] = "rbxassetid://YOUR_ANIMATION_ID_HERE",
+        ["VFXColor"] = Color3.fromRGB(255, 0, 0), -- Red
+        ["HitboxSize"] = Vector3.new(4, 4, 8)
+    }
+}
+
+return MoveData
