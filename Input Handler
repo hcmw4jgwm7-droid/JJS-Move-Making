@@ -1,0 +1,48 @@
+-- Place in StarterCharacterScripts
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+local MoveData = require(ReplicatedStorage:WaitForChild("MoveData"))
+local CombatEvent = ReplicatedStorage:WaitForChild("CombatEvent")
+
+local Cooldowns = {}
+
+-- Key bindings for slots
+local Keys = {
+    [Enum.KeyCode.One] = 1,
+    [Enum.KeyCode.Two] = 2,
+    [Enum.KeyCode.Three] = 3,
+    [Enum.KeyCode.Four] = 4
+}
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    local slot = Keys[input.KeyCode]
+    if slot then
+        -- Find the move associated with this slot
+        for moveName, data in pairs(MoveData) do
+            if data.Slot == slot then
+                -- Check Cooldown
+                if Cooldowns[moveName] and os.time() - Cooldowns[moveName] < data.Cooldown then
+                    print("Move on Cooldown!")
+                    return
+                end
+                
+                -- Fire Server
+                Cooldowns[moveName] = os.time()
+                CombatEvent:FireServer(moveName)
+                
+                -- Play Animation Locally (for instant feedback)
+                local anim = Instance.new("Animation")
+                anim.AnimationId = data.AnimationId
+                local track = Humanoid:LoadAnimation(anim)
+                track:Play()
+                break
+            end
+        end
+    end
+end)
