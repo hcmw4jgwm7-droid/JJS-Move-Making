@@ -1,0 +1,69 @@
+-- Place in ServerScriptService
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
+
+local MoveData = require(ReplicatedStorage:WaitForChild("MoveData"))
+local CombatEvent = ReplicatedStorage:WaitForChild("CombatEvent")
+
+CombatEvent.OnServerEvent:Connect(function(player, moveName)
+    local data = MoveData[moveName]
+    if not data then return end
+    
+    local character = player.Character
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+
+    -- 1. Wait for Windup (Time before the attack actually hits)
+    task.wait(data.WindupTime)
+
+    -- 2. Create Hitbox
+    local hitbox = Instance.new("Part")
+    hitbox.Size = data.HitboxSize
+    hitbox.CFrame = rootPart.CFrame * CFrame.new(0, 0, -data.HitboxSize.Z/2) -- Spawn in front of player
+    hitbox.Transparency = 1 -- Set to 0.5 to see it for testing
+    hitbox.CanCollide = false
+    hitbox.Anchored = true
+    hitbox.Parent = workspace
+    
+    -- 3. VFX (Particle Emitter)
+    local attachment = Instance.new("Attachment", hitbox)
+    local particles = Instance.new("ParticleEmitter")
+    particles.Texture = "rbxassetid://1266170131" -- Generic circle texture
+    particles.Color = ColorSequence.new(data.VFXColor)
+    particles.Size = NumberSequence.new(2, 0)
+    particles.Lifetime = NumberRange.new(0.5, 1)
+    particles.Rate = 0 -- We will emit manually
+    particles.Speed = NumberRange.new(10, 20)
+    particles.SpreadAngle = Vector2.new(360, 360)
+    particles.Parent = attachment
+    
+    -- Burst particles
+    particles:Emit(20) 
+    
+    -- 4. Detect Hits
+    local touched = {}
+    local parts = workspace:GetPartsInPart(hitbox)
+    
+    for _, part in pairs(parts) do
+        local enemyChar = part.Parent
+        local enemyHum = enemyChar:FindFirstChild("Humanoid")
+        
+        -- Check if it's a humanoid and not us
+        if enemyHum and enemyChar ~= character and not touched[enemyChar] then
+            touched[enemyChar] = true
+            enemyHum:TakeDamage(data.Damage)
+            
+            -- Optional: Add Knockback
+            local kb = Instance.new("BodyVelocity")
+            kb.Velocity = rootPart.CFrame.LookVector * 50
+            kb.MaxForce = Vector3.new(100000, 100000, 100000)
+            kb.Parent = enemyChar:FindFirstChild("HumanoidRootPart")
+            Debris:AddItem(kb, 0.2)
+            
+            print("Hit " .. enemyChar.Name .. " for " .. data.Damage .. " damage!")
+        end
+    end
+
+    -- Cleanup Hitbox
+    Debris:AddItem(hitbox, 1) -- Remove hitbox after 1 second
+end)
